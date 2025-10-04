@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NASA Space Biology Publications Dashboard
 
-## Getting Started
+A dynamic web dashboard that helps users explore NASA space biology research publications using AI-powered search, visualization, and summarization tools.
 
-First, run the development server:
+![NASA Space Biology Publications Dashboard](https://via.placeholder.com/1200x600/0a0a1a/38bdf8?text=NASA+Space+Biology+Publications+Dashboard)
+
+## 🚀 Project Overview
+
+This dashboard was built for a hackathon to provide an intuitive interface for exploring 608 NASA space biology research publications. It helps scientists, managers, and mission planners discover relevant research, identify trends, and find research gaps.
+
+### Target Users
+- **Scientists** generating hypotheses
+- **Managers** identifying investment opportunities
+- **Mission planners** for Moon/Mars exploration
+
+### Core Features
+1. 🔍 **AI-powered semantic search** through publications
+2. 📊 **Interactive data visualizations** (timeline, topic distribution, trends)
+3. 🧩 **Topic clustering and categorization**
+4. 🤖 **AI-generated summaries** of key findings
+5. 🔎 **Smart filtering** (by year, topic, organism, experiment type)
+6. 📉 **Gap analysis** showing under-researched areas
+7. 📱 **Responsive, modern UI** with dark mode support
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS
+- **UI Components**: Custom components with shadcn/ui inspiration
+- **Data Visualization**: Recharts
+- **Data Processing**: PapaParse for CSV processing
+- **AI Integration**: OpenAI API (simulated for demo)
+- **Icons**: Lucide React
+
+## 🚀 Getting Started
+
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+/
+├── app/                    # Next.js App Router pages
+│   ├── dashboard/          # Publications dashboard
+│   ├── insights/           # AI-generated insights
+│   ├── search/             # Search interface
+│   ├── visualizations/     # Data visualizations
+│   ├── layout.tsx          # Root layout with navigation
+│   └── page.tsx            # Homepage
+├── components/             # Reusable UI components
+│   ├── charts/             # Visualization components
+│   ├── AISummary.tsx       # AI summary component
+│   ├── FilterSidebar.tsx   # Filtering component
+│   ├── PublicationCard.tsx # Publication display
+│   ├── PublicationModal.tsx # Detailed publication view
+│   ├── SearchBar.tsx       # Search interface
+│   └── StatCard.tsx        # Statistics display
+├── data/                   # Data files
+│   └── publications.csv    # Sample publication data
+├── lib/                    # Utility functions
+│   ├── aiService.ts        # AI integration
+│   ├── dataProcessor.ts    # Data processing utilities
+│   └── utils.ts            # Helper functions
+└── types/                  # TypeScript type definitions
+    └── publication.ts      # Publication data types
+```
 
-## Learn More
+## 🔍 Features in Detail
 
-To learn more about Next.js, take a look at the following resources:
+### Dashboard
+- Browse and filter publications
+- View publication details
+- Bookmark interesting papers
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Visualizations
+- Timeline of publications over years
+- Topic distribution visualization
+- Research gap analysis
+- Publication network graph
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### AI-Powered Search
+- Semantic search for natural language queries
+- Regular keyword search
+- Search history tracking
 
-## Deploy on Vercel
+### AI Insights
+- AI-generated summaries of publications
+- Research gap identification
+- Recommendations for future research
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🌐 Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The application can be deployed on Vercel or any other platform that supports Next.js applications.
+
+```bash
+npm run build
+```
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgements
+
+- Data source: [NASA Space Biology Publications](https://github.com/jgalazka/SB_publications/tree/main)
+- Built with Next.js, TailwindCSS, and Recharts
