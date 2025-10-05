@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Treemap,
   Sector,
+  PieProps,
 } from "recharts";
 import { TopicDistribution as TopicDistributionType } from "../../types/publication";
 import { stringToColor } from "../../lib/publicationUtils";
@@ -32,7 +33,7 @@ interface CustomTooltipProps {
   payload?: TooltipPayload[];
 }
 
-interface ActiveShapeProps extends Omit<PieSectorDataItem, 'payload'> {
+interface ActiveShapeProps {
   cx: number;
   cy: number;
   innerRadius: number;
@@ -42,8 +43,10 @@ interface ActiveShapeProps extends Omit<PieSectorDataItem, 'payload'> {
   fill: string;
   payload: {
     topic: string;
+    count: number;
   };
   value: number;
+  [key: string]: unknown;
 }
 
 interface TreemapContentProps {
@@ -67,9 +70,9 @@ export default function TopicDistribution({
   const sortedData = [...data].sort((a, b) => b.count - a.count);
 
   // Limit to top 20 topics and add index signature for recharts
-  const topData = sortedData.slice(0, 20).map(item => ({
+  const topData = sortedData.slice(0, 20).map((item) => ({
     ...item,
-    [item.topic]: item.count
+    [item.topic]: item.count,
   }));
 
   // Generate colors for topics
@@ -160,7 +163,10 @@ export default function TopicDistribution({
   };
 
   // Handle pie sector click
-  const handlePieClick = (data: { topic: string; count: number }, index: number) => {
+  const handlePieClick = (
+    data: { topic: string; count: number },
+    index: number
+  ) => {
     setActiveIndex(index);
     if (onTopicClick) {
       onTopicClick(data.topic);
@@ -259,7 +265,7 @@ export default function TopicDistribution({
             <PieChart>
               <Pie
                 {...(activeIndex !== null ? { activeIndex } : {})}
-                activeShape={renderActiveShape}
+                activeShape={renderActiveShape as PieProps["activeShape"]}
                 data={topData}
                 cx="50%"
                 cy="50%"
@@ -288,7 +294,7 @@ export default function TopicDistribution({
               aspectRatio={1}
               stroke="#fff"
               isAnimationActive={true}
-              content={<CustomTreemapContent />}
+              content={CustomTreemapContent}
             >
               <Tooltip content={<CustomTooltip />} />
             </Treemap>
