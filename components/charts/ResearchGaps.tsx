@@ -42,7 +42,7 @@ export default function ResearchGaps({
   }));
   
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { gap: ResearchGap } }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload.gap;
       return (
@@ -65,7 +65,7 @@ export default function ResearchGaps({
             <div>
               <span className="text-xs text-gray-400">Related topics:</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {data.relatedTopics.map((topic, i) => (
+                {data.relatedTopics.map((topic: string, i: number) => (
                   <span 
                     key={i}
                     className="inline-block px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-xs"
@@ -94,7 +94,7 @@ export default function ResearchGaps({
   };
   
   // Handle bubble click
-  const handleBubbleClick = (data: any) => {
+  const handleBubbleClick = (data: { gap: ResearchGap }) => {
     if (onGapClick) {
       onGapClick(data.gap);
     }
@@ -139,13 +139,15 @@ export default function ResearchGaps({
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend 
-              payload={
-                severityGroups.map(group => ({
-                  value: group.name,
-                  type: 'circle',
-                  color: group.color,
-                }))
-              }
+              formatter={(value: string, entry: { color?: string }, index: number) => {
+                const group = severityGroups[index];
+                return (
+                  <span style={{ color: group?.color || '#fff' }}>
+                    {group?.name || value}
+                  </span>
+                );
+              }}
+              iconType="circle"
             />
             <Scatter 
               name="Research Gaps" 

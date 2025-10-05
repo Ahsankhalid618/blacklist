@@ -20,6 +20,12 @@ interface TimelineChartProps {
   className?: string;
 }
 
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+}
+
 export default function TimelineChart({
   data,
   className = "",
@@ -67,12 +73,20 @@ export default function TimelineChart({
   };
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ 
+    active, 
+    payload, 
+    label 
+  }: { 
+    active?: boolean; 
+    payload?: TooltipPayload[]; 
+    label?: string | number;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="glass-card p-3 text-sm">
           <p className="font-medium text-white">{`Year: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: TooltipPayload, index: number) => (
             <p key={index} style={{ color: entry.color }}>
               {entry.name}: {entry.value}
             </p>
@@ -168,9 +182,9 @@ export default function TimelineChart({
                   <Bar
                     key={topic}
                     dataKey={(entry) => {
-                      const topicData = entry.topTopics.find(
-                        (t) => t.topic === topic
-                      );
+                        const topicData: { topic: string; count: number } | undefined = entry.topTopics.find(
+                        (t: { topic: string; count: number }) => t.topic === topic
+                        );
                       return topicData ? topicData.count : 0;
                     }}
                     name={topic}
@@ -221,9 +235,9 @@ export default function TimelineChart({
                     key={topic}
                     type="monotone"
                     dataKey={(entry) => {
-                      const topicData = entry.topTopics.find(
-                        (t) => t.topic === topic
-                      );
+                        const topicData: { topic: string; count: number } | undefined = entry.topTopics.find(
+                        (t: { topic: string; count: number }) => t.topic === topic
+                        );
                       return topicData ? topicData.count : 0;
                     }}
                     name={topic}
