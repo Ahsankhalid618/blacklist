@@ -16,9 +16,13 @@ export async function parsePublicationsCSV(
   return new Promise((resolve, reject) => {
     Papa.parse(csvData, {
       header: true,
-      complete: (results) => {
-        const publications = (results.data as Record<string, string>[]).map(
-          (row, index) => {
+      complete: (results: {
+        data: Record<string, string>[];
+        errors: unknown[];
+        meta: unknown;
+      }) => {
+        const publications = results.data.map(
+          (row: Record<string, string>, index: number) => {
             // Transform CSV row into Publication object
             return {
               id: row.id || `pub-${index}`,
@@ -52,19 +56,42 @@ export async function parsePublicationsCSV(
           }
         );
         // Convert to Publication type with type assertion
-        const validPublications = publications.map((pub) => ({
-          originalTitle: pub.title,
-          correspondingAuthorEmail: "",
-          publicationDate: "",
-          pmcid: "",
-          pmid: "",
-          citation: "",
-          scrapingSuccess: true,
-          sections: [],
-          ...pub,
-          fullTextAvailable: true,
-        }));
-        resolve(validPublications as Publication[]);
+        // Create valid Publication objects with proper types
+        const validPublications = publications.map((pub) => {
+          const validPub: Publication = {
+            url: String(pub.url || ""),
+            originalTitle: String(pub.title || ""),
+            title: String(pub.title || ""),
+            authors: Array.isArray(pub.authors) ? pub.authors : [],
+            correspondingAuthorEmail: "",
+            journal: String(pub.journal || ""),
+            publicationDate: String(pub.year || ""),
+            volume: String(pub.volume || ""),
+            issue: String(pub.issue || ""),
+            pages: String(pub.pages || ""),
+            doi: String(pub.doi || ""),
+            pmcid: "",
+            pmid: "",
+            abstract: String(pub.abstract || ""),
+            citation: "",
+            fullTextAvailable: true,
+            scrapingSuccess: true,
+            sections: [],
+            id: String(pub.id || ""),
+            year: typeof pub.year === "number" ? pub.year : 0,
+            keywords: Array.isArray(pub.keywords) ? pub.keywords : [],
+            topics: Array.isArray(pub.topics) ? pub.topics : [],
+            organisms: Array.isArray(pub.organisms) ? pub.organisms : [],
+            experimentType: Array.isArray(pub.experimentType)
+              ? pub.experimentType
+              : [],
+            mission: String(pub.mission || ""),
+            platform: String(pub.platform || ""),
+          };
+          return validPub;
+        });
+
+        resolve(validPublications);
       },
       error: (error: Error) => {
         reject(error);

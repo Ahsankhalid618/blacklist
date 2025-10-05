@@ -32,7 +32,7 @@ export default function NetworkGraph({
     
     // Cleanup function
     return () => {
-      // Cleanup D3 elements if needed
+      
     };
   }, [publications]);
   
