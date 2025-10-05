@@ -348,3 +348,41 @@ export async function extractInsights(
     };
   }
 }
+
+/**
+ * Basic keyword search for publications
+ */
+export function searchPublications(
+  publications: Publication[],
+  query: string,
+  searchIndex?: Map<string, number[]>
+): Publication[] {
+  if (!query.trim()) return [];
+
+  const lowerQuery = query.toLowerCase();
+
+  // If a search index is provided, use it for faster lookup
+  if (searchIndex) {
+    const words = lowerQuery.split(/\W+/).filter(Boolean);
+    let resultIds: Set<number> | null = null;
+
+    words.forEach((word) => {
+      const ids = searchIndex.get(word) || [];
+      if (resultIds === null) {
+        resultIds = new Set(ids);
+      } else {
+        resultIds = new Set(ids.filter((id) => resultIds!.has(id)));
+      }
+    });
+
+    return publications.filter((pub) => resultIds?.has(pub.id));
+  }
+
+  // Fallback: simple filter by title, abstract, authors, or topics
+  return publications.filter((pub) =>
+    [pub.title, pub.abstract, ...(pub.authors || []), ...(pub.topics || [])]
+      .join(" ")
+      .toLowerCase()
+      .includes(lowerQuery)
+  );
+}

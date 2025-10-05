@@ -3,25 +3,28 @@
  */
 
 export interface Publication {
-  id: string;
+  url: string;
+  originalTitle: string; 
   title: string;
   authors: string[];
-  year: number;
-  doi: string;
-  abstract: string;
-  keywords: string[];
+  correspondingAuthorEmail: string;
   journal: string;
-  volume?: string;
-  issue?: string;
-  pages?: string;
-  citations?: number;
-  url?: string;
-  pdfUrl?: string;
-  topics: string[];
-  organisms?: string[];
-  experimentType?: string[];
-  mission?: string;
-  platform?: string;
+  publicationDate: string;
+  volume: string;
+  issue: string;
+  pages: string;
+  doi: string;
+  pmcid: string;
+  pmid: string;
+  abstract: string;
+  citation: string;
+  fullTextAvailable: boolean;
+  scrapingSuccess: boolean;
+  error?: string;
+  sections: {
+    name: string;
+    content: string;
+  }[];
 }
 
 export interface PublicationSummary {
@@ -32,6 +35,7 @@ export interface PublicationSummary {
   abstract: string;
   topics: string[];
   aiSummary?: AISummary;
+  fullTextAvailable:boolean
 }
 
 export interface AISummary {

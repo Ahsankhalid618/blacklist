@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { Filter, ChevronDown, ChevronUp, X, Check } from 'lucide-react';
 import { SearchFilters } from '../types/publication';
 
+// First, ensure FilterOption interface enforces unique values
 interface FilterOption {
+  value: string;  // This should be unique
   label: string;
-  value: string;
   count: number;
 }
 
@@ -132,8 +133,11 @@ export default function FilterSidebar({
           {options.length === 0 ? (
             <p className="text-sm text-gray-400">No options available</p>
           ) : (
-            options.slice(0, 10).map((option) => (
-              <div key={option.value} className="flex items-center">
+            options.slice(0, 10).map((option, index) => (
+              <div 
+                key={`${option.value}-${index}`} 
+                className="flex items-center"
+              >
                 <button
                   className={`flex items-center justify-between w-full text-sm py-1 px-2 rounded hover:bg-white/5 ${
                     selectedValues.includes(option.value) ? 'text-blue-400' : 'text-gray-300'

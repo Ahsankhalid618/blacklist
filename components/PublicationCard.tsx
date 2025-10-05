@@ -35,6 +35,26 @@ export default function PublicationCard({
     }
   };
   
+  // Extract topics
+  const extractTopics = (publication: Publication): string[] => {
+    const text = [
+      publication.title,
+      publication.abstract,
+      ...publication.sections.map(s => s.content)
+    ].join(' ');
+    
+    const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to']);
+    const words = text.toLowerCase()
+      .split(/\W+/)
+      .filter(word => 
+        word.length > 3 && 
+        !commonWords.has(word) &&
+        !Number.isFinite(Number(word))
+      );
+      
+    return Array.from(new Set(words)).slice(0, 4);
+  };
+  
   return (
     <div 
       className={`glass-card p-6 hover:bg-white/5 transition-all cursor-pointer ${className}`}
@@ -66,7 +86,7 @@ export default function PublicationCard({
         
         <div className="flex items-center">
           <Calendar size={14} className="mr-1" />
-          <span>{publication.year}</span>
+          <span>{publication.publicationDate}</span>
         </div>
         
         {publication.journal && (
@@ -84,21 +104,14 @@ export default function PublicationCard({
       )}
       
       <div className="flex flex-wrap gap-2 mb-4">
-        {publication.topics.slice(0, 4).map((topic, index) => (
+        {extractTopics(publication).map((topic, index) => (
           <span 
-            key={index}
+            key={`${topic}-${index}`}
             className="inline-flex items-center bg-blue-500/10 text-blue-300 rounded-full px-2 py-1 text-xs"
           >
-            <Tag size={10} className="mr-1" />
             {topic}
           </span>
         ))}
-        
-        {publication.topics.length > 4 && (
-          <span className="inline-flex items-center bg-gray-500/10 text-gray-300 rounded-full px-2 py-1 text-xs">
-            +{publication.topics.length - 4} more
-          </span>
-        )}
       </div>
       
       <div className="flex justify-between items-center mt-4">

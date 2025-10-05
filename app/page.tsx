@@ -7,6 +7,8 @@ import {
   BarChart2,
   Lightbulb,
 } from "lucide-react";
+import { loadPublications } from "../lib/dataService";
+import { PublicationSummary } from "../types/publication";
 
 // Stat Card Component
 const StatCard = ({
@@ -53,7 +55,37 @@ const FeatureCard = ({
   </Link>
 );
 
-export default function Home() {
+export default async function Home() {
+  const publicationsRaw = await loadPublications();
+  const publications: PublicationSummary[] = publicationsRaw.map((p: any) => ({
+    id: p.id || p.pmcid || p.doi, // Use pmcid or doi as fallback ID
+    title: p.title,
+    authors: p.authors,
+    year: p.year || parseInt(p.publicationDate?.split(' ')[0]) || new Date().getFullYear(),
+    topics: p.topics || [],
+    abstract: p.abstract,
+    fullTextAvailable: p.fullTextAvailable,
+  }));
+  
+  // Calculate stats from actual data
+  const stats = {
+    totalPubs: publications.length,
+    yearRange: (() => {
+      const years = publications
+        .map(p => p.year)
+        .filter(year => !isNaN(year) && year > 1900 && year <= new Date().getFullYear());
+    
+      if (years.length === 0) return 'N/A';
+    
+      const minYear = Math.min(...years);
+      const maxYear = Math.max(...years);
+    
+      return minYear === maxYear ? minYear.toString() : `${minYear}-${maxYear}`;
+    })(),
+    topics: new Set(publications.flatMap(p => p.topics)).size,
+    fullTextAvailable: publications.filter(p => p.fullTextAvailable).length
+  };
+
   return (
     <>
       {/* Hero Section */}
@@ -75,7 +107,7 @@ export default function Home() {
               NASA Space Biology Publications Dashboard
             </h1>
             <p className="text-xl text-gray-300 mb-8">
-              Explore 608 space biology research publications with AI-powered
+              Explore {stats.totalPubs} space biology research publications with AI-powered
               search, visualization, and summarization tools
             </p>
 
@@ -136,27 +168,52 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title="Total Publications"
-              value="608"
+              value={stats.totalPubs.toString()}
               description="Peer-reviewed space biology research papers"
             />
             <StatCard
               title="Publication Range"
-              value="1991-2023"
-              description="Over 30 years of space biology research"
+              value={stats.yearRange}
+              description="Years of space biology research"
             />
             <StatCard
               title="Research Topics"
-              value="42"
+              value={stats.topics.toString()}
               description="Distinct research areas and disciplines"
             />
             <StatCard
-              title="Space Missions"
-              value="15"
-              description="ISS expeditions and other space missions"
+              title="Full Text Available"
+              value={stats.fullTextAvailable.toString()}
+              description="Publications with full text access"
             />
           </div>
         </div>
       </section>
+
+      {/* Recent Publications Section */}
+      <div className="container mx-auto px-4 py-16">
+        <h2 className="text-2xl font-bold mb-8">Recent Publications</h2>
+        <div className="grid gap-6">
+          {publications.slice(0, 5).map((pub: PublicationSummary) => (
+            <div key={pub.id} className="glass-card p-6">
+              <h3 className="font-bold text-lg mb-2">{pub.title}</h3>
+              <p className="text-sm text-gray-300 mb-2">{pub.authors.join(', ')}</p>
+              <p className="text-sm text-gray-400">{pub.year}</p>
+              {pub.abstract && (
+                <p className="mt-4 text-gray-300 line-clamp-2">{pub.abstract}</p>
+              )}
+              {pub.id && (
+                <a 
+                  href={`/publications/${pub.id}`}
+                  className="mt-4 text-blue-400 hover:text-blue-300 inline-flex items-center"
+                >
+                  View Publication <ArrowRight size={16} className="ml-1" />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Features Section */}
       <section className="py-16 bg-indigo-950">

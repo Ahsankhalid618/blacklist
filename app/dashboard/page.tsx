@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Grid, List, SlidersHorizontal, Filter, ArrowDownAZ, ArrowUpZA, Calendar, TrendingUp } from 'lucide-react';
+import { Grid, List, SlidersHorizontal } from 'lucide-react';
 import { Publication, SearchFilters } from '../../types/publication';
-import { parsePublicationsCSV, getPublicationSummaries, createSearchIndex } from '../../lib/dataProcessor';
-import { filterPublications, getFilterOptions, searchPublications } from '../../lib/utils';
+import { loadPublications } from '../../lib/dataService';
 import SearchBar from '../../components/SearchBar';
 import PublicationCard from '../../components/PublicationCard';
 import FilterSidebar from '../../components/FilterSidebar';
@@ -21,16 +20,142 @@ const defaultFilters: SearchFilters = {
   platforms: []
 };
 
+function extractTopicsFromText(text: string): string[] {
+  const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'from', 'by']);
+  const words = text.toLowerCase()
+    .split(/\W+/)
+    .filter(word => 
+      word.length > 3 && 
+      !commonWords.has(word) &&
+      !Number.isFinite(Number(word))
+    );
+  
+  return Array.from(new Set(words)).slice(0, 5);
+}
+
+function getRelevanceScore(publication: Publication, searchQuery: string): number {
+  const searchTerms = searchQuery.toLowerCase().split(' ');
+  let score = 0;
+
+  searchTerms.forEach(term => {
+    if (publication.title.toLowerCase().includes(term)) score += 3;
+  });
+
+  searchTerms.forEach(term => {
+    if (publication.abstract.toLowerCase().includes(term)) score += 2;
+  });
+
+  publication.sections.forEach(section => {
+    searchTerms.forEach(term => {
+      if (section.content.toLowerCase().includes(term)) score += 1;
+    });
+  });
+
+  return score;
+}
+
+function filterPublications(publications: Publication[], filters: SearchFilters): Publication[] {
+  return publications.filter(pub => {
+    const pubYear = pub.publicationDate ? new Date(pub.publicationDate).getFullYear() : new Date().getFullYear();
+    if (pubYear < filters.years[0] || pubYear > filters.years[1]) return false;
+
+    if (filters.topics.length > 0) {
+      const pubText = `${pub.title} ${pub.abstract} ${pub.sections.map(s => s.content).join(' ')}`.toLowerCase();
+      if (!filters.topics.some(t => pubText.includes(t.toLowerCase()))) return false;
+    }
+
+    if (filters.organisms.length > 0 && !filters.organisms.some(o => pub.abstract.toLowerCase().includes(o.toLowerCase()))) return false;
+
+    if (filters.experimentTypes.length > 0 && !filters.experimentTypes.some(e => pub.abstract.toLowerCase().includes(e.toLowerCase()))) return false;
+
+    if (filters.missions.length > 0 && !filters.missions.some(m => pub.abstract.toLowerCase().includes(m.toLowerCase()))) return false;
+
+    if (filters.platforms.length > 0 && !filters.platforms.some(p => pub.abstract.toLowerCase().includes(p.toLowerCase()))) return false;
+
+    return true;
+  });
+}
+
+function searchPublications(publications: Publication[], query: string): Publication[] {
+  const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+  
+  return publications.filter(pub => {
+    const searchableText = [
+      pub.title,
+      pub.abstract,
+      pub.authors.join(' '),
+      pub.journal
+    ].join(' ').toLowerCase();
+
+    return searchTerms.every(term => searchableText.includes(term));
+  });
+}
+
+function getFilterOptions(publications: Publication[]) {
+  const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']);
+  
+  const topics = new Set<string>();
+  publications.forEach(pub => {
+    const words = pub.title.split(/\W+/)
+      .concat(pub.abstract.split(/\W+/))
+      .filter(word => 
+        word.length > 3 && 
+        !commonWords.has(word.toLowerCase()) &&
+        !Number.isFinite(Number(word))
+      );
+    words.forEach(word => topics.add(word));
+  });
+
+  const organisms = new Set<string>();
+  const commonOrganisms = ['mouse', 'rat', 'cell', 'bacteria', 'plant', 'human', 'mice', 'cells'];
+  publications.forEach(pub => {
+    commonOrganisms.forEach(org => {
+      if (pub.abstract.toLowerCase().includes(org)) {
+        organisms.add(org);
+      }
+    });
+  });
+
+  const experimentTypes = new Set<string>();
+  const commonExperiments = ['analysis', 'study', 'experiment', 'test', 'trial', 'observation'];
+  publications.forEach(pub => {
+    commonExperiments.forEach(exp => {
+      if (pub.abstract.toLowerCase().includes(exp)) {
+        experimentTypes.add(exp);
+      }
+    });
+  });
+
+  return {
+    years: [...new Set(publications.map(p => p.publicationDate ? new Date(p.publicationDate).getFullYear() : new Date().getFullYear()))].sort(),
+    topics: Array.from(topics).sort().slice(0, 100),
+    organisms: Array.from(organisms).sort(),
+    experimentTypes: Array.from(experimentTypes).sort(),
+    missions: ['ISS', 'Space Shuttle', 'Ground Control'],
+    platforms: ['Spacecraft', 'Laboratory', 'Space Station']
+  };
+}
+
+// Add this function near your other utility functions
+function validatePublicationData(publications: Publication[]): Publication[] {
+  const seen = new Set();
+  return publications.filter(pub => {
+    if (!pub.pmcid || seen.has(pub.pmcid)) {
+      console.warn(`Duplicate or invalid PMCID found:`, pub);
+      return false;
+    }
+    seen.add(pub.pmcid);
+    return true;
+  });
+}
+
 export default function DashboardPage() {
-  // State for publications data
   const [publications, setPublications] = useState<Publication[]>([]);
   const [filteredPublications, setFilteredPublications] = useState<Publication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // State for search and filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchIndex, setSearchIndex] = useState<Map<string, number[]> | null>(null);
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [filterOptions, setFilterOptions] = useState<any>({
     years: [],
@@ -41,222 +166,148 @@ export default function DashboardPage() {
     platforms: []
   });
   
-  // State for view options
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortOption, setSortOption] = useState<'relevance' | 'year-desc' | 'year-asc' | 'citations'>('year-desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [itemsPerPage] = useState(12);
   
-  // State for selected publication
   const [selectedPublication, setSelectedPublication] = useState<Publication | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // State for bookmarks
   const [bookmarkedPubs, setBookmarkedPubs] = useState<string[]>([]);
-  
-  // Load publications data
+
   useEffect(() => {
-    async function loadPublications() {
+    async function fetchPublications() {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        
-        // In a real application, we would fetch the CSV from the server
-        // For this demo, we'll simulate loading the data
-        const response = await fetch('/api/publications');
-        const csvData = await response.text();
-        
-        // Parse CSV data
-        const pubs = await parsePublicationsCSV(csvData);
-        setPublications(pubs);
-        setFilteredPublications(pubs);
-        
-        // Create search index
-        const index = createSearchIndex(pubs);
-        setSearchIndex(index);
-        
-        // Get filter options
-        const options = getFilterOptions(pubs);
-        setFilterOptions({
-          years: options.years,
-          topics: options.topics.map(t => ({ label: t, value: t, count: pubs.filter(p => p.topics.includes(t)).length })),
-          organisms: options.organisms.map(o => ({ label: o, value: o, count: pubs.filter(p => p.organisms?.includes(o) || false).length })),
-          experimentTypes: options.experimentTypes.map(e => ({ label: e, value: e, count: pubs.filter(p => p.experimentType?.includes(e) || false).length })),
-          missions: options.missions.map(m => ({ label: m, value: m, count: pubs.filter(p => p.mission === m).length })),
-          platforms: options.platforms.map(p => ({ label: p, value: p, count: pubs.filter(pub => pub.platform === p).length }))
-        });
-        
-        // Update year range in filters
-        if (options.years.length > 0) {
+        const pubs = await loadPublications();
+        const validatedPubs = validatePublicationData(pubs);
+        setPublications(validatedPubs);
+        setFilteredPublications(validatedPubs);
+
+        const options = getFilterOptions(validatedPubs);
+        setFilterOptions(options);
+
+        if (validatedPubs.length > 0) {
+          const years = validatedPubs.map(p => p.publicationDate ? new Date(p.publicationDate).getFullYear() : new Date().getFullYear());
           setFilters(prev => ({
             ...prev,
-            years: [Math.min(...options.years), Math.max(...options.years)]
+            years: [Math.min(...years), Math.max(...years)]
           }));
         }
-        
-        setIsLoading(false);
       } catch (err) {
         console.error('Error loading publications:', err);
-        setError('Failed to load publications data. Please try again later.');
-        setIsLoading(false);
-      }
-    }
-    
-    // In a real app, we would load the actual data
-    // For this demo, we'll simulate the publications
-    const simulatePublications = async () => {
-      setIsLoading(true);
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      try {
-        // Use the sample data we created earlier
-        const response = await fetch('/data/publications.csv');
-        const csvData = await response.text();
-        
-        // Parse CSV data
-        const pubs = await parsePublicationsCSV(csvData);
-        setPublications(pubs);
-        setFilteredPublications(pubs);
-        
-        // Create search index
-        const index = createSearchIndex(pubs);
-        setSearchIndex(index);
-        
-        // Get filter options
-        const options = getFilterOptions(pubs);
-        setFilterOptions({
-          years: options.years,
-          topics: options.topics.map(t => ({ label: t, value: t, count: pubs.filter(p => p.topics.includes(t)).length })),
-          organisms: options.organisms.map(o => ({ label: o, value: o, count: pubs.filter(p => p.organisms?.includes(o) || false).length })),
-          experimentTypes: options.experimentTypes.map(e => ({ label: e, value: e, count: pubs.filter(p => p.experimentType?.includes(e) || false).length })),
-          missions: options.missions.map(m => ({ label: m, value: m, count: pubs.filter(p => p.mission === m).length })),
-          platforms: options.platforms.map(p => ({ label: p, value: p, count: pubs.filter(pub => pub.platform === p).length }))
-        });
-        
-        // Update year range in filters
-        if (options.years.length > 0) {
-          setFilters(prev => ({
-            ...prev,
-            years: [Math.min(...options.years), Math.max(...options.years)]
-          }));
-        }
-      } catch (err) {
-        console.error('Error simulating publications:', err);
         setError('Failed to load publications data. Please try again later.');
       } finally {
         setIsLoading(false);
       }
-    };
-    
-    simulatePublications();
+    }
+
+    fetchPublications();
   }, []);
   
-  // Apply search and filters
   useEffect(() => {
     if (publications.length === 0) return;
     
     let results = [...publications];
     
-    // Apply filters
     results = filterPublications(results, filters);
     
-    // Apply search
     if (searchQuery.trim()) {
-      results = searchPublications(results, searchQuery, searchIndex || undefined);
+      results = searchPublications(results, searchQuery);
     }
     
-    // Apply sorting
     results = sortPublications(results, sortOption);
     
     setFilteredPublications(results);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [searchQuery, filters, publications, sortOption, searchIndex]);
+    setCurrentPage(1);
+  }, [searchQuery, filters, publications, sortOption]);
   
-  // Sort publications
   const sortPublications = (pubs: Publication[], sort: string): Publication[] => {
     const sorted = [...pubs];
     
     switch (sort) {
       case 'year-desc':
-        return sorted.sort((a, b) => b.year - a.year);
+        return sorted.sort((a, b) => {
+          const yearA = a.publicationDate ? new Date(a.publicationDate).getFullYear() : 0;
+          const yearB = b.publicationDate ? new Date(b.publicationDate).getFullYear() : 0;
+          return yearB - yearA;
+        });
       case 'year-asc':
-        return sorted.sort((a, b) => a.year - b.year);
+        return sorted.sort((a, b) => {
+          const yearA = a.publicationDate ? new Date(a.publicationDate).getFullYear() : 0;
+          const yearB = b.publicationDate ? new Date(b.publicationDate).getFullYear() : 0;
+          return yearA - yearB;
+        });
       case 'citations':
-        return sorted.sort((a, b) => (b.citations || 0) - (a.citations || 0));
+        return sorted.sort((a, b) => (b.pmcid ? 1 : 0) - (a.pmcid ? 1 : 0));
+      case 'relevance':
+        if (!searchQuery.trim()) return sorted;
+        return sorted.sort((a, b) => {
+          const aScore = getRelevanceScore(a, searchQuery);
+          const bScore = getRelevanceScore(b, searchQuery);
+          return bScore - aScore;
+        });
       default:
         return sorted;
     }
   };
   
-  // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
   
-  // Handle filter change
   const handleFilterChange = (newFilters: SearchFilters) => {
     setFilters(newFilters);
   };
   
-  // Handle filter clear
   const handleClearFilters = () => {
     setFilters(defaultFilters);
   };
   
-  // Handle view publication details
   const handleViewPublication = (publication: Publication) => {
     setSelectedPublication(publication);
     setIsModalOpen(true);
   };
   
-  // Handle bookmark toggle
   const handleBookmarkToggle = (publication: Publication, isBookmarked: boolean) => {
     if (isBookmarked) {
-      setBookmarkedPubs(prev => [...prev, publication.id]);
+      setBookmarkedPubs(prev => [...prev, publication.pmcid]);
     } else {
-      setBookmarkedPubs(prev => prev.filter(id => id !== publication.id));
+      setBookmarkedPubs(prev => prev.filter(id => id !== publication.pmcid));
     }
   };
-  
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredPublications.length / itemsPerPage);
+
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPublications = filteredPublications.slice(startIndex, endIndex);
-  
-  // Get stats
+
   const totalResults = filteredPublications.length;
+  const totalPages = Math.ceil(totalResults / itemsPerPage);
   const yearRange = publications.length > 0 
-    ? `${Math.min(...publications.map(p => p.year))} - ${Math.max(...publications.map(p => p.year))}`
+    ? `${Math.min(...publications.map(p => p.publicationDate ? new Date(p.publicationDate).getFullYear() : new Date().getFullYear()))} - ${Math.max(...publications.map(p => p.publicationDate ? new Date(p.publicationDate).getFullYear() : new Date().getFullYear()))}`
     : 'N/A';
+
   const topTopics = publications.length > 0
-    ? [...new Set(publications.flatMap(p => p.topics))]
-        .map(topic => ({
-          topic,
-          count: publications.filter(p => p.topics.includes(topic)).length
-        }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3)
-        .map(t => t.topic)
-        .join(', ')
+    ? Array.from(new Set(
+        publications.flatMap(p => extractTopicsFromText(`${p.title} ${p.abstract}`))
+      ))
+      .slice(0, 3)
+      .join(', ')
     : 'N/A';
   
   return (
     <div className="min-h-screen">
-      {/* Header section */}
       <div className="bg-slate-900 py-8">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold mb-6">Publications Dashboard</h1>
           
-          {/* Search bar */}
           <SearchBar
             onSearch={handleSearch}
             isLoading={isLoading}
             placeholder="Search publications by title, author, keywords..."
           />
           
-          {/* Stats cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <StatCard
               title="Publications"
@@ -277,13 +328,11 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      {/* Main content */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
           <div className="lg:w-1/4">
             <FilterSidebar
-              years={filterOptions.years}
+              years={filterOptions.years} // Change from filterOptions.publicationDate to filterOptions.years
               topics={filterOptions.topics}
               organisms={filterOptions.organisms}
               experimentTypes={filterOptions.experimentTypes}
@@ -295,9 +344,7 @@ export default function DashboardPage() {
             />
           </div>
           
-          {/* Results */}
           <div className="lg:w-3/4">
-            {/* Results header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div>
                 <h2 className="text-xl font-bold">
@@ -309,7 +356,6 @@ export default function DashboardPage() {
               </div>
               
               <div className="flex items-center gap-4">
-                {/* View toggle */}
                 <div className="flex items-center bg-slate-800 rounded-lg overflow-hidden">
                   <button
                     className={`p-2 ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
@@ -327,7 +373,6 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 
-                {/* Sort dropdown */}
                 <div className="relative">
                   <select
                     className="appearance-none bg-slate-800 border border-slate-700 rounded-lg py-2 pl-3 pr-10 text-sm"
@@ -346,14 +391,12 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            {/* Error message */}
             {error && (
               <div className="bg-red-500/20 border border-red-500/50 text-red-300 p-4 rounded-lg mb-6">
                 {error}
               </div>
             )}
             
-            {/* Loading state */}
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
@@ -361,7 +404,6 @@ export default function DashboardPage() {
               </div>
             ) : (
               <>
-                {/* No results */}
                 {filteredPublications.length === 0 ? (
                   <div className="glass-card p-8 text-center">
                     <h3 className="text-xl font-bold mb-2">No publications found</h3>
@@ -379,25 +421,23 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <>
-                    {/* Publications grid/list */}
                     <div className={viewMode === 'grid' 
                       ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
                       : 'space-y-4'
                     }>
                       {currentPublications.map((pub) => (
                         <PublicationCard
-                          key={pub.id}
+                          key={`pub-${pub.pmcid}`} // Modified key to ensure uniqueness
                           publication={pub}
                           onViewDetails={handleViewPublication}
                           onBookmarkToggle={handleBookmarkToggle}
-                          isBookmarked={bookmarkedPubs.includes(pub.id)}
+                          isBookmarked={bookmarkedPubs.includes(pub.pmcid)}
                           showAbstract={viewMode === 'grid'}
                           className={viewMode === 'list' ? 'flex flex-col' : ''}
                         />
                       ))}
                     </div>
                     
-                    {/* Pagination */}
                     {totalPages > 1 && (
                       <div className="flex justify-center mt-8">
                         <div className="flex items-center space-x-2">
@@ -410,7 +450,6 @@ export default function DashboardPage() {
                           </button>
                           
                           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            // Show 5 pages max with current page in the middle when possible
                             let pageNum;
                             if (totalPages <= 5) {
                               pageNum = i + 1;
@@ -467,18 +506,19 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      {/* Publication modal */}
       {selectedPublication && (
         <PublicationModal
           publication={selectedPublication}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onBookmarkToggle={handleBookmarkToggle}
-          isBookmarked={bookmarkedPubs.includes(selectedPublication.id)}
+          isBookmarked={bookmarkedPubs.includes(selectedPublication.pmcid)}
           relatedPublications={publications
             .filter(p => 
-              p.id !== selectedPublication.id && 
-              p.topics.some(t => selectedPublication.topics.includes(t))
+              p.pmcid !== selectedPublication.pmcid && 
+              p.title.toLowerCase().split(' ').some(word => 
+                selectedPublication.title.toLowerCase().includes(word) && word.length > 4
+              )
             )
             .slice(0, 3)
           }

@@ -57,7 +57,7 @@ export default function PublicationModal({
   const handleCopyCitation = () => {
     // Format citation in APA style
     const citation = `${publication.authors.join(", ")} (${
-      publication.year
+      publication.publicationDate
     }). ${publication.title}. ${publication.journal}${
       publication.volume ? `, ${publication.volume}` : ""
     }${publication.issue ? `(${publication.issue})` : ""}${
@@ -150,7 +150,7 @@ export default function PublicationModal({
 
                 <div className="flex items-center">
                   <Calendar size={16} className="mr-2" />
-                  <span>{publication.year}</span>
+                  <span>{publication.publicationDate}</span>
                 </div>
 
                 {publication.journal && (
@@ -179,20 +179,19 @@ export default function PublicationModal({
                 <h3 className="text-sm font-medium text-gray-400 mb-2">
                   Topics
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                  {publication.topics.map((topic, index) => (
+                {/* <div className="flex flex-wrap gap-2">
+                  {publication.topics?.map((topic, index) => (
                     <span
                       key={index}
                       className="inline-flex items-center bg-blue-500/10 text-blue-300 rounded-full px-3 py-1 text-sm"
                     >
-                      <Tag size={12} className="mr-1" />
                       {topic}
                     </span>
-                  ))}
-                </div>
+                  )) || []}
+                </div> */}
               </div>
 
-              {publication.organisms && publication.organisms.length > 0 && (
+              {/* {publication.organisms && publication.organisms.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-400 mb-2">
                     Organisms
@@ -249,7 +248,7 @@ export default function PublicationModal({
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
 
               <div className="flex flex-wrap gap-4 pt-4 border-t border-white/10">
                 {publication.doi && (
@@ -352,14 +351,14 @@ export default function PublicationModal({
               <div className="space-y-4">
                 {relatedPublications.map((pub) => (
                   <div
-                    key={pub.id}
+                    key={pub.pmcid}
                     className="glass-card p-4 hover:bg-white/5 cursor-pointer"
                   >
                     <h3 className="font-medium mb-1">{pub.title}</h3>
                     <div className="flex flex-wrap gap-2 text-xs text-gray-300">
                       <span>{formatAuthors(pub.authors, 2)}</span>
                       <span>•</span>
-                      <span>{pub.year}</span>
+                      <span>{pub.publicationDate}</span>
                       {pub.journal && (
                         <>
                           <span>•</span>
@@ -367,7 +366,7 @@ export default function PublicationModal({
                         </>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    {/* <div className="flex flex-wrap gap-1 mt-2">
                       {pub.topics.slice(0, 3).map((topic, index) => (
                         <span
                           key={index}
@@ -381,7 +380,7 @@ export default function PublicationModal({
                           +{pub.topics.length - 3} more
                         </span>
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 ))}
 
