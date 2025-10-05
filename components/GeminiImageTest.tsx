@@ -90,12 +90,12 @@ export default function GeminiImageTest() {
 
       <div className="mt-4 text-xs text-gray-500">
         <p>
-          Note: Make sure you have set the NEXT_PUBLIC_GEMINI_API environment
+          Note: Make sure you have set the GEMINI_API_KEY environment
           variable in your .env.local file.
         </p>
         <p>
           Current API key status:{" "}
-          {process.env.NEXT_PUBLIC_GEMINI_API ? "Set ✅" : "Not set ❌"}
+          {process.env.GEMINI_API_KEY ? "Set ✅" : "Not set ❌"}
         </p>
       </div>
     </div>

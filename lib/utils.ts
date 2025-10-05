@@ -32,14 +32,16 @@ export function filterPublications(
 ): Publication[] {
   return publications.filter((pub) => {
     // Filter by year range
-    if (pub.year < filters.years[0] || pub.year > filters.years[1]) {
+    const pubYear = pub.year || 0;
+    if (pubYear < filters.years[0] || pubYear > filters.years[1]) {
       return false;
     }
 
     // Filter by topics (if any selected)
     if (
       filters.topics.length > 0 &&
-      !pub.topics.some((topic) => filters.topics.includes(topic))
+      (!pub.topics ||
+        !pub.topics.some((topic) => filters.topics.includes(topic)))
     ) {
       return false;
     }
@@ -127,9 +129,11 @@ export function searchPublications(
           pub.abstract.toLowerCase().includes(term)
         ).length;
 
-        const keywordMatches = searchTerms.filter((term) =>
-          pub.keywords.some((k) => k.toLowerCase().includes(term))
-        ).length;
+        const keywordMatches = pub.keywords
+          ? searchTerms.filter((term) =>
+              pub.keywords!.some((k) => k.toLowerCase().includes(term))
+            ).length
+          : 0;
 
         const authorMatches = searchTerms.filter((term) =>
           pub.authors.some((a) => a.toLowerCase().includes(term))
@@ -161,9 +165,11 @@ export function getFilterOptions(publications: Publication[]) {
   const platforms = new Set<string>();
 
   publications.forEach((pub) => {
-    years.add(pub.year);
+    if (pub.year) years.add(pub.year);
 
-    pub.topics.forEach((topic) => topics.add(topic));
+    if (pub.topics) {
+      pub.topics.forEach((topic) => topics.add(topic));
+    }
 
     if (pub.organisms) {
       pub.organisms.forEach((org) => organisms.add(org));
@@ -195,10 +201,10 @@ export function getFilterOptions(publications: Publication[]) {
 /**
  * Debounce function for search inputs
  */
-export function debounce<F extends (...args: any[]) => any>(
+export function debounce<F extends (...args: unknown[]) => unknown>(
   func: F,
   waitFor: number
-) {
+): (...args: Parameters<F>) => Promise<ReturnType<F>> {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return (...args: Parameters<F>): Promise<ReturnType<F>> => {
@@ -206,8 +212,11 @@ export function debounce<F extends (...args: any[]) => any>(
       clearTimeout(timeout);
     }
 
-    return new Promise((resolve) => {
-      timeout = setTimeout(() => resolve(func(...args)), waitFor);
+    return new Promise<ReturnType<F>>((resolve) => {
+      timeout = setTimeout(
+        () => resolve(func(...args) as ReturnType<F>),
+        waitFor
+      );
     });
   };
 }

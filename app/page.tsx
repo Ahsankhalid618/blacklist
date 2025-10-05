@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   Search,
@@ -57,33 +56,39 @@ const FeatureCard = ({
 
 export default async function Home() {
   const publicationsRaw = await loadPublications();
-  const publications: PublicationSummary[] = publicationsRaw.map((p: any) => ({
-    id: p.id || p.pmcid || p.doi, // Use pmcid or doi as fallback ID
+  const publications: PublicationSummary[] = publicationsRaw.map((p) => ({
+    id: p.pmcid || p.doi || "", // Use pmcid or doi as ID
     title: p.title,
     authors: p.authors,
-    year: p.year || parseInt(p.publicationDate?.split(' ')[0]) || new Date().getFullYear(),
+    year:
+      p.year ||
+      parseInt(p.publicationDate?.split(" ")[0]) ||
+      new Date().getFullYear(),
     topics: p.topics || [],
     abstract: p.abstract,
     fullTextAvailable: p.fullTextAvailable,
   }));
-  
+
   // Calculate stats from actual data
   const stats = {
     totalPubs: publications.length,
     yearRange: (() => {
       const years = publications
-        .map(p => p.year)
-        .filter(year => !isNaN(year) && year > 1900 && year <= new Date().getFullYear());
-    
-      if (years.length === 0) return 'N/A';
-    
+        .map((p) => p.year)
+        .filter(
+          (year) =>
+            !isNaN(year) && year > 1900 && year <= new Date().getFullYear()
+        );
+
+      if (years.length === 0) return "N/A";
+
       const minYear = Math.min(...years);
       const maxYear = Math.max(...years);
-    
+
       return minYear === maxYear ? minYear.toString() : `${minYear}-${maxYear}`;
     })(),
-    topics: new Set(publications.flatMap(p => p.topics)).size,
-    fullTextAvailable: publications.filter(p => p.fullTextAvailable).length
+    topics: new Set(publications.flatMap((p) => p.topics)).size,
+    fullTextAvailable: publications.filter((p) => p.fullTextAvailable).length,
   };
 
   return (
@@ -107,8 +112,8 @@ export default async function Home() {
               NASA Space Biology Publications Dashboard
             </h1>
             <p className="text-xl text-gray-300 mb-8">
-              Explore {stats.totalPubs} space biology research publications with AI-powered
-              search, visualization, and summarization tools
+              Explore {stats.totalPubs} space biology research publications with
+              AI-powered search, visualization, and summarization tools
             </p>
 
             {/* Search Bar */}
@@ -197,13 +202,17 @@ export default async function Home() {
           {publications.slice(0, 5).map((pub: PublicationSummary) => (
             <div key={pub.id} className="glass-card p-6">
               <h3 className="font-bold text-lg mb-2">{pub.title}</h3>
-              <p className="text-sm text-gray-300 mb-2">{pub.authors.join(', ')}</p>
+              <p className="text-sm text-gray-300 mb-2">
+                {pub.authors.join(", ")}
+              </p>
               <p className="text-sm text-gray-400">{pub.year}</p>
               {pub.abstract && (
-                <p className="mt-4 text-gray-300 line-clamp-2">{pub.abstract}</p>
+                <p className="mt-4 text-gray-300 line-clamp-2">
+                  {pub.abstract}
+                </p>
               )}
               {pub.id && (
-                <a 
+                <a
                   href={`/publications/${pub.id}`}
                   className="mt-4 text-blue-400 hover:text-blue-300 inline-flex items-center"
                 >

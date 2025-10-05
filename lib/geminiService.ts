@@ -58,7 +58,7 @@ const { GoogleGenerativeAI } = GenAI as {
 };
 
 // Initialize the Gemini API client
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API || "");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 /**
  * Generate a summary of a publication using Gemini API
@@ -67,7 +67,7 @@ export async function generateSummaryWithGemini(
   abstract: string
 ): Promise<AISummary> {
   try {
-    if (!process.env.NEXT_PUBLIC_GEMINI_API) {
+    if (!process.env.GEMINI_API_KEY) {
       throw new Error("Gemini API key not found");
     }
 
@@ -171,7 +171,7 @@ export async function semanticSearchWithGemini(
   publications: Publication[]
 ): Promise<Publication[]> {
   try {
-    if (!process.env.NEXT_PUBLIC_GEMINI_API) {
+    if (!process.env.GEMINI_API_KEY) {
       throw new Error("Gemini API key not found");
     }
 
@@ -247,7 +247,7 @@ export async function identifyGapsWithGemini(
   publications: Publication[]
 ): Promise<ResearchGap[]> {
   try {
-    if (!process.env.NEXT_PUBLIC_GEMINI_API) {
+    if (!process.env.GEMINI_API_KEY) {
       throw new Error("Gemini API key not found");
     }
 
@@ -359,7 +359,7 @@ export async function generateImageWithGemini(
   prompt: string
 ): Promise<string | null> {
   try {
-    if (!process.env.NEXT_PUBLIC_GEMINI_API) {
+    if (!process.env.GEMINI_API_KEY) {
       throw new Error("Gemini API key not found");
     }
 

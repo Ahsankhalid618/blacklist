@@ -4,7 +4,7 @@
 
 export interface Publication {
   url: string;
-  originalTitle: string; 
+  originalTitle: string;
   title: string;
   authors: string[];
   correspondingAuthorEmail: string;
@@ -25,6 +25,15 @@ export interface Publication {
     name: string;
     content: string;
   }[];
+  // Additional fields used in the application
+  id?: string;
+  year?: number;
+  keywords?: string[];
+  topics?: string[];
+  organisms?: string[];
+  experimentType?: string[];
+  mission?: string;
+  platform?: string;
 }
 
 export interface PublicationSummary {
@@ -35,7 +44,7 @@ export interface PublicationSummary {
   abstract: string;
   topics: string[];
   aiSummary?: AISummary;
-  fullTextAvailable:boolean
+  fullTextAvailable: boolean;
 }
 
 export interface AISummary {
