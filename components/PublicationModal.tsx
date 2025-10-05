@@ -14,7 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { Publication, AISummary } from "../types/publication";
-import { formatAuthors, formatDOI } from "../lib/utils";
+import { formatAuthors, formatDOI } from "../lib/publicationUtils";
 
 interface PublicationModalProps {
   publication: Publication;
@@ -299,7 +299,7 @@ export default function PublicationModal({
                 <ul className="space-y-2">
                   {aiSummary.keyFindings.map((finding, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="inline-block w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 flex-shrink-0 flex items-center justify-center mr-2 mt-0.5">
+                      <span className=" w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 flex-shrink-0 flex items-center justify-center mr-2 mt-0.5">
                         {index + 1}
                       </span>
                       <span>{finding}</span>
@@ -323,7 +323,7 @@ export default function PublicationModal({
                   <ul className="space-y-2">
                     {aiSummary.gapAreas.map((gap, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="inline-block w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex-shrink-0 flex items-center justify-center mr-2 mt-0.5">
+                        <span className=" w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex-shrink-0 flex items-center justify-center mr-2 mt-0.5">
                           !
                         </span>
                         <span>{gap}</span>
@@ -356,7 +356,7 @@ export default function PublicationModal({
                   >
                     <h3 className="font-medium mb-1">{pub.title}</h3>
                     <div className="flex flex-wrap gap-2 text-xs text-gray-300">
-                      <span>{formatAuthors(pub.authors, 2)}</span>
+                      <span>{formatAuthors(pub.authors)}</span>
                       <span>•</span>
                       <span>{pub.publicationDate}</span>
                       {pub.journal && (

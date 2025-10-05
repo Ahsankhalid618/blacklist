@@ -94,7 +94,7 @@ export default async function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden animated-gradient py-24 sm:py-32">
+      <section className="relative overflow-hidden animated-gradient pt-32 pb-24 sm:pt-40 sm:pb-32">
         {/* Animated stars/particles effect */}
         <div className="absolute inset-0 z-0 opacity-30">
           {/* This would be enhanced with a proper particles library in production */}
@@ -164,7 +164,7 @@ export default async function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-slate-900">
+      <section className="py-16  mx-auto max-w-7xl">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
             Research at a Glance
@@ -196,7 +196,7 @@ export default async function Home() {
       </section>
 
       {/* Recent Publications Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto max-w-7xl px-4 py-16">
         <h2 className="text-2xl font-bold mb-8">Recent Publications</h2>
         <div className="grid gap-6">
           {publications.slice(0, 5).map((pub: PublicationSummary) => (
@@ -225,8 +225,8 @@ export default async function Home() {
       </div>
 
       {/* Features Section */}
-      <section className="py-16 bg-indigo-950">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-indigo-950 ">
+        <div className="container mx-auto max-w-7xl px-4">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
             Explore the Dashboard
           </h2>
@@ -256,7 +256,7 @@ export default async function Home() {
 
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-purple-900 to-indigo-900">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto max-w-7xl px-4 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">
             Ready to explore space biology research?
           </h2>

@@ -476,16 +476,19 @@ export default function DashboardPage() {
       : "N/A";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen mx-auto max-w-7xl">
       <div className="bg-slate-900 py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-6">Publications Dashboard</h1>
-
-          <SearchBar
-            onSearch={handleSearch}
-            isLoading={isLoading}
-            placeholder="Search publications by title, author, keywords..."
-          />
+          <h1 className="text-3xl text-center font-bold mb-6">
+            Publications Dashboard
+          </h1>
+          <div className="mx-auto max-w-xl w-full">
+            <SearchBar
+              onSearch={handleSearch}
+              isLoading={isLoading}
+              placeholder="Search publications by title, author, keywords..."
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <StatCard

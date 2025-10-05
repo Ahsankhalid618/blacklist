@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { BookOpen, Calendar, Users, Tag, ExternalLink, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Publication } from '../types/publication';
-import { formatAuthors, formatDOI } from '../lib/utils';
+import { formatAuthors, formatDOI } from '../lib/publicationUtils';
 
 interface PublicationCardProps {
   publication: Publication;
