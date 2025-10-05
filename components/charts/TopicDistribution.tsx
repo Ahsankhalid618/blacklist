@@ -20,6 +20,41 @@ interface TopicDistributionProps {
   onTopicClick?: (topic: string) => void;
 }
 
+interface TooltipPayload {
+  payload: {
+    topic: string;
+    count: number;
+  };
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+}
+
+interface ActiveShapeProps extends Omit<PieSectorDataItem, 'payload'> {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: {
+    topic: string;
+  };
+  value: number;
+}
+
+interface TreemapContentProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name: string;
+  value: number;
+}
+
 export default function TopicDistribution({
   data,
   className = "",
@@ -31,8 +66,11 @@ export default function TopicDistribution({
   // Sort data by count (descending)
   const sortedData = [...data].sort((a, b) => b.count - a.count);
 
-  // Limit to top 20 topics for better visualization
-  const topData = sortedData.slice(0, 20);
+  // Limit to top 20 topics and add index signature for recharts
+  const topData = sortedData.slice(0, 20).map(item => ({
+    ...item,
+    [item.topic]: item.count
+  }));
 
   // Generate colors for topics
   const getTopicColor = (topic: string) => {
@@ -40,7 +78,7 @@ export default function TopicDistribution({
   };
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: { active: boolean, payload: any }) => {
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -59,17 +97,7 @@ export default function TopicDistribution({
   };
 
   // Custom active shape for pie chart
-  const renderActiveShape = (props: {
-    cx: number;
-    cy: number;
-    innerRadius: number;
-    outerRadius: number;
-    startAngle: number;
-    endAngle: number;
-    fill: string;
-    payload: any;
-    value: number;
-  }) => {
+  const renderActiveShape = (props: ActiveShapeProps) => {
     const {
       cx,
       cy,
@@ -132,7 +160,7 @@ export default function TopicDistribution({
   };
 
   // Handle pie sector click
-  const handlePieClick = (data: any, index: number) => {
+  const handlePieClick = (data: { topic: string; count: number }, index: number) => {
     setActiveIndex(index);
     if (onTopicClick) {
       onTopicClick(data.topic);
@@ -141,17 +169,13 @@ export default function TopicDistribution({
 
   // Custom treemap content
   const CustomTreemapContent = ({
-    root,
-    depth,
     x,
     y,
     width,
     height,
-    index,
-    colors,
     name,
     value,
-  }: any) => {
+  }: TreemapContentProps) => {
     return (
       <g
         onClick={() => onTopicClick && onTopicClick(name)}
@@ -234,7 +258,7 @@ export default function TopicDistribution({
           {chartType === "pie" ? (
             <PieChart>
               <Pie
-                activeIndex={activeIndex !== null ? activeIndex : undefined}
+                {...(activeIndex !== null ? { activeIndex } : {})}
                 activeShape={renderActiveShape}
                 data={topData}
                 cx="50%"
