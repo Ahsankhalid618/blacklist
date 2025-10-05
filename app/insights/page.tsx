@@ -156,7 +156,7 @@ export default function InsightsPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen mx-auto max-w-7xl py-12">
       {/* Header section */}
       <div className="bg-slate-900 py-8">
         <div className="container mx-auto px-4">

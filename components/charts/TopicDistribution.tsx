@@ -12,7 +12,7 @@ import {
   Sector,
 } from "recharts";
 import { TopicDistribution as TopicDistributionType } from "../../types/publication";
-import { stringToColor } from "../../lib/utils";
+import { stringToColor } from "../../lib/publicationUtils";
 
 interface TopicDistributionProps {
   data: TopicDistributionType[];
@@ -40,7 +40,7 @@ export default function TopicDistribution({
   };
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active: boolean, payload: any }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -59,7 +59,17 @@ export default function TopicDistribution({
   };
 
   // Custom active shape for pie chart
-  const renderActiveShape = (props: any) => {
+  const renderActiveShape = (props: {
+    cx: number;
+    cy: number;
+    innerRadius: number;
+    outerRadius: number;
+    startAngle: number;
+    endAngle: number;
+    fill: string;
+    payload: any;
+    value: number;
+  }) => {
     const {
       cx,
       cy,
