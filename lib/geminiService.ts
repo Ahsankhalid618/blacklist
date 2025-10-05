@@ -225,7 +225,7 @@ export async function semanticSearchWithGemini(
     // Add any publications not ranked by Gemini at the end
     const rankedIds = new Set(uniqueIds);
     const unrankedPublications = publications.filter(
-      (pub) => !rankedIds.has(pub.id)
+      (pub) => !rankedIds.has(pub.id || "")
     );
 
     return [...rankedPublications, ...unrankedPublications];
@@ -282,7 +282,7 @@ export async function identifyGapsWithGemini(
       .map(
         (pub) => `Title: ${pub.title}
     Abstract: ${pub.abstract.substring(0, 200)}...
-    Topics: ${pub.topics.join(", ")}`
+    Topics: ${pub.topics?.join(", ")}`
       )
       .join("\n\n")}`;
 

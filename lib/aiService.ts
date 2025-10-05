@@ -176,7 +176,7 @@ export async function semanticSearch(
         const allWords = [
           ...titleWords,
           ...abstractWords,
-          ...pub.topics.map((t) => t.toLowerCase()),
+          ...(pub.topics?.map((t) => t.toLowerCase()) || []),
         ];
 
         // Calculate score based on word matches
@@ -187,7 +187,7 @@ export async function semanticSearch(
             score += 5;
           }
           if (
-            pub.topics.some((topic) => topic.toLowerCase().includes(queryWord))
+            pub.topics?.some((topic) => topic.toLowerCase().includes(queryWord))
           ) {
             score += 4;
           }
@@ -235,10 +235,12 @@ export async function identifyGaps(
       // Count publications per topic
       const topicCounts = new Map<string, number>();
       allTopics.forEach((topic) => {
-        const count = publications.filter((pub) =>
-          pub.topics.includes(topic)
-        ).length;
-        topicCounts.set(topic, count);
+        if (topic) {
+          const count = publications.filter((pub) =>
+            pub.topics?.includes(topic)
+          ).length;
+          topicCounts.set(topic, count);
+        }
       });
 
       // Find topics with low coverage
@@ -251,10 +253,11 @@ export async function identifyGaps(
         // Find related topics
         const relatedTopics = allTopics
           .filter(
-            (t) =>
+            (t): t is string =>
+              t !== undefined &&
               t !== topic &&
               publications.some(
-                (pub) => pub.topics.includes(topic) && pub.topics.includes(t)
+                (pub) => pub.topics?.includes(topic) && pub.topics?.includes(t)
               )
           )
           .slice(0, 3);
@@ -291,15 +294,19 @@ export async function extractInsights(
     // For this demo, we'll generate some simple insights
 
     // Get publication years
-    const years = publications.map((pub) => pub.year);
-    const minYear = Math.min(...years);
-    const maxYear = Math.max(...years);
+    const years = publications
+      .map((pub) => pub.year || 0)
+      .filter((year) => year > 0);
+    const minYear =
+      years.length > 0 ? Math.min(...years) : new Date().getFullYear();
+    const maxYear =
+      years.length > 0 ? Math.max(...years) : new Date().getFullYear();
     const yearRange = maxYear - minYear;
 
     // Get all topics and their counts
     const topicCounts = new Map<string, number>();
     publications.forEach((pub) => {
-      pub.topics.forEach((topic) => {
+      pub.topics?.forEach((topic) => {
         topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
       });
     });
@@ -375,7 +382,9 @@ export function searchPublications(
       }
     });
 
-    return publications.filter((pub) => resultIds?.has(pub.id));
+    return publications.filter(
+      (pub) => pub.id !== undefined && resultIds?.has(Number(pub.id))
+    );
   }
 
   // Fallback: simple filter by title, abstract, authors, or topics
